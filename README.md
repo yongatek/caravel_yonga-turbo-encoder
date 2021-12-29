@@ -13,21 +13,24 @@ Table of contents
 
 Overview
 ========
+#### DVB-RCS2 Turbo Encoder
 
 The Turbo Encoder is used for FEC encoding for linear modulation.
 
 Encoder takes 2 bits of input (namely A and B) and generates 6 bits of output in the form (AB Y1W1 Y2W2)
 
-First couple of parity bits (Y1W1) are generated from normal ordered input data while second couple of parity bits (Y2W2) are generated from interleaved input data.
+First couple of parity bits (Y1W1) are generated from linearly ordered input data while second couple of parity bits (Y2W2) are generated from interleaved input data.
 
-The design involves two paths one of which is used for interleaved input data.
+The design involves two paths: 
+1) Linear order path
+2) Interleaved path
 
 #### Top-Level Diagram
 ![alt text](docs/images/encoder_schematic.png)
 
 -Input Data is stored at dual channel rams. 
 
--AGU (Address Generator Unit) generates data indices for interleaving.
+-AGU's (Address Generator Unit) generate data indices for linearly ordered and interleaved data inputs.
 
 -Pre Encoder unit identifies initial state of the encoder.
 
