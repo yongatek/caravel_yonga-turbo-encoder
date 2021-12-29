@@ -15,7 +15,7 @@ Overview
 ========
 #### DVB-RCS2 Turbo Encoder
 
-The Turbo Encoder is used for FEC encoding for linear modulation.
+Turbo Encoder is used for FEC encoding for linear modulation.
 
 Encoder takes 2 bits of input (namely A and B) and generates 6 bits of output in the form (AB Y1W1 Y2W2)
 
