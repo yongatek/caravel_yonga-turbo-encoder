@@ -23,7 +23,7 @@ First couple of parity bits (Y1W1) are generated from normal ordered input data 
 The design involves two paths one of which is used for interleaved input data.
 
 #### Top-Level Diagram
-![alt text](docs/encoder_schematic.png)
+![alt text](docs/images/encoder_schematic.png)
 
 -Input Data is stored at dual channel rams. 
 
@@ -34,10 +34,10 @@ The design involves two paths one of which is used for interleaved input data.
 -Encoder Core produces outputs according to the state and the inputs.
 
 #### Synthesis Report
-![alt text](docs/synt_encoder.png)
+![alt text](docs/images/synt_encoder.png)
 
 #### Implementation Report
-![alt text](docs/imp_encoder.png)
+![alt text](docs/images/imp_encoder.png)
 
 -Reports are based on Xilinx Spartan-7 xc7s6ftgb196-1
 
