@@ -20,7 +20,7 @@ Encoder takes 2 bits of input (namely A and B) and generates 6 bits of output in
 
 First couple of parity bits (Y1W1) are generated from normal ordered input data while second couple of parity bits (Y2W2) are generated from interleaved input data.
 
-The design involves 2 paths one of which is used for interleaved input data.
+The design involves two paths one of which is used for interleaved input data.
 
 #### Top-Level Diagram
 ![alt text](docs/encoder_schematic.png)
