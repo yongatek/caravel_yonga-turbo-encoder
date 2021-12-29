@@ -29,11 +29,11 @@ Second couple of parity bits (Y2W2) are generated from interleaved input data.
 -Pre Encoder unit identifies initial state of the encoder.
 -Encoder Core produces outputs according to the state and the inputs.
 
-Throughput formula
+#### Throughput
 ![equation](http://www.sciweavers.org/tex2img.php?eq=%5Cfrac%7B2%2AN%7D%7B3%2AN%2B10%7D%20%2A%20f&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0)
 
-N = input data block size in couple number ranging from 56 to 2396
-f = frequency in Mhz
+N = input data block size in couple number ranging from 56 to 2396.
+f = frequency in Mhz.
 
 For 50 Mhz clock speed and N = 56, throughput equals 31.5 Mbps
 For 50 Mhz clock speed and N = 2396, throughput equals 33.3 Mbps
