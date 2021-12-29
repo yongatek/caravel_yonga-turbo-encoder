@@ -38,6 +38,8 @@ Second couple of parity bits (Y2W2) are generated from interleaved input data.
 #### Implementation Report
 ![alt text](docs/imp_encoder.png)
 
+-Reports are based on Xilinx Spartan-7 xc7s6ftgb196-1
+
 
 #### Throughput
 ![equation](http://www.sciweavers.org/tex2img.php?eq=%5Cfrac%7B2%2AN%7D%7B3%2AN%2B10%7D%20%2A%20f&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0)
