@@ -29,6 +29,13 @@ Second couple of parity bits (Y2W2) are generated from interleaved input data.
 -Pre Encoder unit identifies initial state of the encoder.
 -Encoder Core produces outputs according to the state and the inputs.
 
+#### Synthesis Report
+![alt text](docs/synt_encoder.png)
+
+#### Implementation Report
+![alt text](docs/imp_encoder.png)
+
+
 #### Throughput
 ![equation](http://www.sciweavers.org/tex2img.php?eq=%5Cfrac%7B2%2AN%7D%7B3%2AN%2B10%7D%20%2A%20f&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0)
 
