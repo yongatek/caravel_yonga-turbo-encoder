@@ -34,4 +34,8 @@ TBA
 List of Contributors
 =================================
 
-TBA
+*In alphabetical order:*
+
+- Baris Bilgili
+- Burak Yakup Cakar
+- Muhammed Celik
