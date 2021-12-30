@@ -25,4 +25,11 @@
 `else
     `include "user_project_wrapper.v"
     `include "user_proj_example.v"
+    `include "fifo.v"
+    `include "dual_ram.v"
+    `include "encoder_core.v"
+    `include "pre_encoder_rom.v"
+    `include "pre_encoder.v"
+    `include "turbo_enc_agu.v"
+    `include "turbo_encoder_top.v"
 `endif

@@ -70,96 +70,505 @@ module user_proj_example #(
 );
     wire clk;
     wire rst;
+    wire i_bof;
+    wire i_eof;
+    wire i_valid;
+    wire [1:0] i_data;
+    wire i_ready;
+    wire o_ready;
+    wire o_valid;
+    wire o_bof;
+    wire o_eof;
+    wire [5:0] o_data;
+
+    wire rx_fifo_rd;
+    wire rx_fifo_wr;
+    wire [3:0] rx_fifo_r_data;
+    wire [3:0] rx_fifo_w_data;
+    wire rx_fifo_empty;
+    wire rx_fifo_full;
+
+    wire tx_fifo_rd;
+    wire tx_fifo_wr;
+    wire [7:0] tx_fifo_r_data;
+    wire [7:0] tx_fifo_w_data;
+    wire tx_fifo_empty;
+    wire tx_fifo_full;
+
+    wire [5:0] param_sel;
+
+    reg  rx_fifo_rd_start;
+    reg  tx_fifo_rd_start;
+    reg  master_rden;
+    reg  wbs_ack_o;
+
+    reg [9:0] i_conf_blocksize;
+    reg [9:0] i_conf_p;
+    reg [11:0] i_conf_q0;
+    reg [11:0] i_conf_q1;
+    reg [11:0] i_conf_q2;
+    reg [11:0] i_conf_q3;
 
     wire [`MPRJ_IO_PADS-1:0] io_in;
     wire [`MPRJ_IO_PADS-1:0] io_out;
     wire [`MPRJ_IO_PADS-1:0] io_oeb;
 
-    wire [31:0] rdata; 
-    wire [31:0] wdata;
-    wire [BITS-1:0] count;
-
     wire valid;
     wire [3:0] wstrb;
-    wire [31:0] la_write;
 
     // WB MI A
     assign valid = wbs_cyc_i && wbs_stb_i; 
     assign wstrb = wbs_sel_i & {4{wbs_we_i}};
-    assign wbs_dat_o = rdata;
-    assign wdata = wbs_dat_i;
 
-    // IO
-    assign io_out = count;
     assign io_oeb = {(`MPRJ_IO_PADS-1){rst}};
 
     // IRQ
     assign irq = 3'b000;	// Unused
 
-    // LA
-    assign la_data_out = {{(127-BITS){1'b0}}, count};
-    // Assuming LA probes [63:32] are for controlling the count register  
-    assign la_write = ~la_oenb[63:32] & ~{BITS{valid}};
-    // Assuming LA probes [65:64] are for controlling the count clk & reset  
-    assign clk = (~la_oenb[64]) ? la_data_in[64]: wb_clk_i;
-    assign rst = (~la_oenb[65]) ? la_data_in[65]: wb_rst_i;
+    assign rx_fifo_rd = rx_fifo_rd_start & (~rx_fifo_empty);
 
-    counter #(
-        .BITS(BITS)
-    ) counter(
-        .clk(clk),
-        .reset(rst),
-        .ready(wbs_ack_o),
-        .valid(valid),
-        .rdata(rdata),
-        .wdata(wbs_dat_i),
-        .wstrb(wstrb),
-        .la_write(la_write),
-        .la_input(la_data_in[63:32]),
-        .count(count)
+    assign clk      = wb_clk_i;
+    assign rst      = wb_rst_i;
+    assign i_bof    = (la_data_in[32]) ? io_in[9] : rx_fifo_rd & rx_fifo_r_data[2];
+    assign i_eof    = (la_data_in[32]) ? io_in[10] : rx_fifo_rd & rx_fifo_r_data[3];
+    assign i_valid  = (la_data_in[32]) ? io_in[11] : rx_fifo_rd;
+    assign i_data   = (la_data_in[32]) ? io_in[14:13] : (rx_fifo_rd) ? rx_fifo_r_data[1:0] : 0;
+    assign i_ready  = (la_data_in[32]) ? io_in[18] : 1'b1;
+
+    assign wbs_dat_o[14]    = (la_data_in[32]) ? 1'bz : 1'b1;
+    assign wbs_dat_o[15]    = (la_data_in[32]) ? 1'bz : tx_fifo_rd_start;
+    assign wbs_dat_o[6]     = (la_data_in[32]) ? 1'bz : tx_fifo_r_data[6];
+    assign wbs_dat_o[7]     = (la_data_in[32]) ? 1'bz : tx_fifo_r_data[7];
+    assign wbs_dat_o[5:0]   = (la_data_in[32]) ? 6'bz : tx_fifo_r_data[5:0]; 
+    assign wbs_dat_o[31:16] = 0;
+    assign wbs_dat_o[13:8]  = 0;
+
+    assign io_out[12]       = (la_data_in[32]) ? o_ready : 1'bz;   
+    assign io_out[17]       = (la_data_in[32]) ? o_valid : 1'bz;
+    assign io_out[15]       = (la_data_in[32]) ? o_bof : 1'bz;
+    assign io_out[16]       = (la_data_in[32]) ? o_eof : 1'bz;
+    assign io_out[24:19]    = (la_data_in[32]) ? o_data : 6'bz;
+    assign io_out[31]       = (la_data_in[32]) ? ~wb_clk_i : 1'bz;
+
+    assign param_sel        = (la_data_in[32]) ? io_in[30:25] : la_data_in[38:33];
+
+    turbo_encoder_top turbo_encoder_top_inst(
+    .i_clk(clk),
+    .i_rstn(~rst),
+    .i_bof(i_bof),
+    .i_eof(i_eof),
+    .i_valid(i_valid),
+    .i_data(i_data),
+    .i_ready(i_ready),
+    .o_ready(o_ready),
+    .o_valid(o_valid),
+    .o_bof(o_bof),
+    .o_eof(o_eof),
+    .o_data(o_data),
+    .i_conf_blocksize(i_conf_blocksize),
+    .i_conf_p(i_conf_p),
+    .i_conf_q0(i_conf_q0),
+    .i_conf_q1(i_conf_q1),
+    .i_conf_q2(i_conf_q2),
+    .i_conf_q3(i_conf_q3)
     );
 
-endmodule
+    fifo #(.B(4), .W(8)) rx_fifo_inst(
+        .clk(clk),
+        .reset(rst),
+        .rd(rx_fifo_rd),
+        .wr(valid & (~wbs_ack_o) & wbs_dat_i[15]),
+        .w_data({wbs_dat_i[7], wbs_dat_i[6], wbs_dat_i[1:0]}),
+        .r_data(rx_fifo_r_data),
+        .empty(rx_fifo_empty),
+        .full(rx_fifo_full)
+        );
 
-module counter #(
-    parameter BITS = 32
-)(
-    input clk,
-    input reset,
-    input valid,
-    input [3:0] wstrb,
-    input [BITS-1:0] wdata,
-    input [BITS-1:0] la_write,
-    input [BITS-1:0] la_input,
-    output ready,
-    output [BITS-1:0] rdata,
-    output [BITS-1:0] count
-);
-    reg ready;
-    reg [BITS-1:0] count;
-    reg [BITS-1:0] rdata;
+    fifo #(.B(8), .W(8)) tx_fifo_inst(
+        .clk(clk),
+        .reset(rst),
+        .rd(valid & wbs_ack_o & master_rden ),
+        .wr(o_valid),
+        .w_data({o_eof, o_bof, o_data}),
+        .r_data(tx_fifo_r_data),
+        .empty(tx_fifo_empty),
+        .full(tx_fifo_full)
+        );
 
     always @(posedge clk) begin
-        if (reset) begin
-            count <= 0;
-            ready <= 0;
-        end else begin
-            ready <= 1'b0;
-            if (~|la_write) begin
-                count <= count + 1;
-            end
-            if (valid && !ready) begin
-                ready <= 1'b1;
-                rdata <= count;
-                if (wstrb[0]) count[7:0]   <= wdata[7:0];
-                if (wstrb[1]) count[15:8]  <= wdata[15:8];
-                if (wstrb[2]) count[23:16] <= wdata[23:16];
-                if (wstrb[3]) count[31:24] <= wdata[31:24];
-            end else if (|la_write) begin
-                count <= la_write & la_input;
-            end
+        if (rst) begin
+            rx_fifo_rd_start = 0;
+            tx_fifo_rd_start = 0;
+            master_rden = 0;
+            wbs_ack_o = 0;
+        end
+        else begin 
+            if (valid & wbs_dat_i[15] & wbs_dat_i[7]) rx_fifo_rd_start <= 1;
+            if (rx_fifo_empty) rx_fifo_rd_start <= 0;
+            
+            if (o_eof) tx_fifo_rd_start <= 1;
+            if (tx_fifo_empty) tx_fifo_rd_start <= 0;
+
+            if ((~wbs_dat_i[13]) & valid & (~wbs_ack_o)) master_rden <= 0;
+            if (wbs_dat_i[13] & valid & (~wbs_ack_o)) master_rden <= 1;
+            
+            wbs_ack_o <= 0;
+            if (valid & (~wbs_ack_o)) wbs_ack_o <= 1;
+
+            case(param_sel)
+
+                0:
+                    begin
+                    i_conf_blocksize <= 14;
+                    i_conf_p  <= 9;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 11;
+                    i_conf_q2 <= 51;
+                    i_conf_q3 <= 19;
+                    end
+
+                1:
+                    begin
+                    i_conf_blocksize <= 38;
+                    i_conf_p  <= 17;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 23;
+                    i_conf_q2 <= 63;
+                    i_conf_q3 <= 11;
+                    end
+
+                2:
+                    begin
+                    i_conf_blocksize <= 51;
+                    i_conf_p  <= 23;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 23;
+                    i_conf_q2 <= 107;
+                    i_conf_q3 <= 107;
+                    end
+
+                3:
+                    begin
+                    i_conf_blocksize <= 55;
+                    i_conf_p  <= 23;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 43;
+                    i_conf_q2 <= 131;
+                    i_conf_q3 <= 115;
+                    end
+
+                4:
+                    begin
+                    i_conf_blocksize <= 59;
+                    i_conf_p  <= 23;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 11;
+                    i_conf_q2 <= 23;
+                    i_conf_q3 <= 219;
+                    end
+
+                5:
+                    begin
+                    i_conf_blocksize <= 62;
+                    i_conf_p  <= 23;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 35;
+                    i_conf_q2 <= 63;
+                    i_conf_q3 <= 63;
+                    end
+
+                6:
+                    begin
+                    i_conf_blocksize <= 69;
+                    i_conf_p  <= 25;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 7;
+                    i_conf_q2 <= 111;
+                    i_conf_q3 <= 103;
+                    end
+
+                7:
+                    begin
+                    i_conf_blocksize <= 84;
+                    i_conf_p  <= 23;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 7;
+                    i_conf_q2 <= 83;
+                    i_conf_q3 <= 71;
+                    end
+
+                8:
+                    begin
+                    i_conf_blocksize <= 85;
+                    i_conf_p  <= 23;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 55;
+                    i_conf_q2 <= 255;
+                    i_conf_q3 <= 215;
+                    end
+
+                9:
+                    begin
+                    i_conf_blocksize <= 93;
+                    i_conf_p  <= 25;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 31;
+                    i_conf_q2 <= 111;
+                    i_conf_q3 <= 107;
+                    end
+
+                10:
+                    begin
+                    i_conf_blocksize <= 96;
+                    i_conf_p  <= 25;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 11;
+                    i_conf_q2 <= 103;
+                    i_conf_q3 <= 107;
+                    end
+
+                11:
+                    begin
+                    i_conf_blocksize <= 100;
+                    i_conf_p  <= 23;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 35;
+                    i_conf_q2 <= 131;
+                    i_conf_q3 <= 127;
+                    end
+
+                12:
+                    begin
+                    i_conf_blocksize <= 108;
+                    i_conf_p  <= 29;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 19;
+                    i_conf_q2 <= 123;
+                    i_conf_q3 <= 123;
+                    end
+
+                13:
+                    begin
+                    i_conf_blocksize <= 115;
+                    i_conf_p  <= 29;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 23;
+                    i_conf_q2 <= 239;
+                    i_conf_q3 <= 239;
+                    end
+
+                14:
+                    begin
+                    i_conf_blocksize <= 123;
+                    i_conf_p  <= 31;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 15;
+                    i_conf_q2 <= 7;
+                    i_conf_q3 <= 3;
+                    end
+
+                15:
+                    begin
+                    i_conf_blocksize <= 128;
+                    i_conf_p  <= 31;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 7;
+                    i_conf_q2 <= 135;
+                    i_conf_q3 <= 131;
+                    end
+
+                16:
+                    begin
+                    i_conf_blocksize <= 130;
+                    i_conf_p  <= 31;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 7;
+                    i_conf_q2 <= 11;
+                    i_conf_q3 <= 3;
+                    end
+
+                17:
+                    begin
+                    i_conf_blocksize <= 144;
+                    i_conf_p  <= 31;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 3;
+                    i_conf_q2 <= 3;
+                    i_conf_q3 <= 3;
+                    end
+
+                18:
+                    begin
+                    i_conf_blocksize <= 170;
+                    i_conf_p  <= 33;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 63;
+                    i_conf_q2 <= 523;
+                    i_conf_q3 <= 515;
+                    end
+
+                19:
+                    begin
+                    i_conf_blocksize <= 175;
+                    i_conf_p  <= 37;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 11;
+                    i_conf_q2 <= 3;
+                    i_conf_q3 <= 11;
+                    end
+
+                20:
+                    begin
+                    i_conf_blocksize <= 188;
+                    i_conf_p  <= 37;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 15;
+                    i_conf_q2 <= 167;
+                    i_conf_q3 <= 159;
+                    end
+
+                21:
+                    begin
+                    i_conf_blocksize <= 192;
+                    i_conf_p  <= 37;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 7;
+                    i_conf_q2 <= 183;
+                    i_conf_q3 <= 123;
+                    end
+
+                22:
+                    begin
+                    i_conf_blocksize <= 194;
+                    i_conf_p  <= 39;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 3;
+                    i_conf_q2 <= 319;
+                    i_conf_q3 <= 319;
+                    end
+
+                23:
+                    begin
+                    i_conf_blocksize <= 256;
+                    i_conf_p  <= 45;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 7;
+                    i_conf_q2 <= 199;
+                    i_conf_q3 <= 183;
+                    end
+
+                24:
+                    begin
+                    i_conf_blocksize <= 264;
+                    i_conf_p  <= 43;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 3;
+                    i_conf_q2 <= 27;
+                    i_conf_q3 <= 11;
+                    end
+
+                25:
+                    begin
+                    i_conf_blocksize <= 298;
+                    i_conf_p  <= 49;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 15;
+                    i_conf_q2 <= 23;
+                    i_conf_q3 <= 3;
+                    end
+
+                26:
+                    begin
+                    i_conf_blocksize <= 307;
+                    i_conf_p  <= 49;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 27;
+                    i_conf_q2 <= 3;
+                    i_conf_q3 <= 7;
+                    end
+
+                27:
+                    begin
+                    i_conf_blocksize <= 333;
+                    i_conf_p  <= 49;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 23;
+                    i_conf_q2 <= 3;
+                    i_conf_q3 <= 23;
+                    end
+
+                28:
+                    begin
+                    i_conf_blocksize <= 355;
+                    i_conf_p  <= 53;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 19;
+                    i_conf_q2 <= 239;
+                    i_conf_q3 <= 223;
+                    end
+
+                29:
+                    begin
+                    i_conf_blocksize <= 400;
+                    i_conf_p  <= 53;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 43;
+                    i_conf_q2 <= 243;
+                    i_conf_q3 <= 219;
+                    end
+
+                30:
+                    begin
+                    i_conf_blocksize <= 438;
+                    i_conf_p  <= 59;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 7;
+                    i_conf_q2 <= 247;
+                    i_conf_q3 <= 243;
+                    end
+
+                31:
+                    begin
+                    i_conf_blocksize <= 444;
+                    i_conf_p  <= 59;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 35;
+                    i_conf_q2 <= 731;
+                    i_conf_q3 <= 715;
+                    end
+
+                32:
+                    begin
+                    i_conf_blocksize <= 539;
+                    i_conf_p  <= 65;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 15;
+                    i_conf_q2 <= 31;
+                    i_conf_q3 <= 3;
+                    end
+
+                33:
+                    begin
+                    i_conf_blocksize <= 59;
+                    i_conf_p  <= 23;
+                    i_conf_q0 <= 3;
+                    i_conf_q1 <= 11;
+                    i_conf_q2 <= 23;
+                    i_conf_q3 <= 219;
+                    end
+
+                default:
+                    begin
+                    i_conf_blocksize <= 0;
+                    i_conf_p  <= 0;
+                    i_conf_q0 <= 0;
+                    i_conf_q1 <= 0;
+                    i_conf_q2 <= 0;
+                    i_conf_q3 <= 0;
+                    end
+            endcase
         end
     end
-
 endmodule
+
 `default_nettype wire
