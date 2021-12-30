@@ -209,8 +209,8 @@ module user_proj_example #(
             if (o_eof) tx_fifo_rd_start <= 1;
             if (tx_fifo_empty) tx_fifo_rd_start <= 0;
 
-            if ((~wbs_dat_i[13]) & valid & (~wbs_ack_o)) master_rden <= 0;
-            if (wbs_dat_i[13] & valid & (~wbs_ack_o)) master_rden <= 1;
+            if ((~wbs_dat_i[13]) & valid & wbs_ack_o) master_rden <= 0;
+            if (wbs_dat_i[13] & valid & wbs_ack_o) master_rden <= 1;
             
             wbs_ack_o <= 0;
             if (valid & (~wbs_ack_o)) wbs_ack_o <= 1;

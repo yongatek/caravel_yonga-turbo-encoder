@@ -99,29 +99,6 @@ module turbo_encoder_gpio_test_tb;
 	end
 
 	initial begin
-		dump_file = $fopen("test_dump.txt");
-
-		wait(test_start);
-
-		for (j = 0; j < 300; j = j + 1) begin
-			$fdisplay(dump_file, "\n -------------------- t = %d -------------------- \n\n", j);
-			$fdisplay(dump_file, "i_clk : %b\n", uut.mprj.mprj.turbo_encoder_top_inst.i_clk);
-			$fdisplay(dump_file, "i_rstn : %b\n", uut.mprj.mprj.turbo_encoder_top_inst.i_rstn);
-			$fdisplay(dump_file, "i_bof : %b\n", uut.mprj.mprj.turbo_encoder_top_inst.i_bof);
-			$fdisplay(dump_file, "i_eof : %b\n", uut.mprj.mprj.turbo_encoder_top_inst.i_eof);
-			$fdisplay(dump_file, "i_valid : %b\n", uut.mprj.mprj.turbo_encoder_top_inst.i_valid);
-			$fdisplay(dump_file, "i_data : %b\n", uut.mprj.mprj.turbo_encoder_top_inst.i_data);
-			$fdisplay(dump_file, "i_ready : %b\n", uut.mprj.mprj.turbo_encoder_top_inst.i_ready);
-			$fdisplay(dump_file, "o_ready : %b\n", uut.mprj.mprj.turbo_encoder_top_inst.o_ready);
-			$fdisplay(dump_file, "o_valid : %b\n", uut.mprj.mprj.turbo_encoder_top_inst.o_valid);
-			$fdisplay(dump_file, "o_bof : %b\n", uut.mprj.mprj.turbo_encoder_top_inst.o_bof);
-			$fdisplay(dump_file, "o_eof : %b\n", uut.mprj.mprj.turbo_encoder_top_inst.o_eof);
-			$fdisplay(dump_file, "o_data : %b\n", uut.mprj.mprj.turbo_encoder_top_inst.o_data);
-			#20 wait(clk);
-		end
-	end
-
-	initial begin
 		wait (mprj_io [37:32] == 6'b111111);
 		test_start = 1;
 		$display("Monitor: Turbo Encoder Test Started");
