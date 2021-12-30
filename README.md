@@ -52,9 +52,9 @@ The design involves two paths:
 
 'f' = frequency in Mhz.
 
-For 50 Mhz clock speed and N = 56, throughput equals 31.5 Mbps.
+For 50 Mhz clock speed and N = 56, throughput equals to 31.5 Mbps.
 
-For 50 Mhz clock speed and N = 2396, throughput equals 33.3 Mbps.
+For 50 Mhz clock speed and N = 2396, throughput equals to 33.3 Mbps.
 
 Setup
 ========
