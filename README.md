@@ -58,19 +58,57 @@ For 50 Mhz clock speed and N = 2396, throughput equals to 33.3 Mbps.
 
 Setup
 ========
-
-TBA
+To setup caravel, run the following
+```
+git clone https://github.com/yongatek/caravel_yonga-turbo-encoder.git
+cd caravel_yonga-turbo-encoder
+make install
+```
+Setup the pdk
+```
+export PDK_ROOT=<pdk-installation-path>
+make pdk
+```
 
 Running Simulation
 ========
-
-TBA
+First, you will need to install the simulation environment, by
+```
+make simenv
+```
+Then set the environment properly
+```
+export PDK_ROOT=<pdk-installation-path>
+export CARAVEL_ROOT=$(pwd)/caravel
+```
+Specify simulation mode
+```
+export SIM=RTL
+# use the command below for GL simulation
+# export SIM=GL
+```
+Run these commands to test YONGA-Turbo Encoder
+```
+# run Turbo Encoder WB test
+make verify-turbo_encoder_wb_test
+# run Turbo Encoder GPIO test
+make verify-turbo_encoder_gpio_test
+```
 
 Hardening the User Project Macro using OpenLANE
 ========
-
-TBA
-
+First, you will need to install openlane to harden the user project macro
+```
+export OPENLANE_ROOT=<openlane-installation-path>
+make openlane
+```
+To harden the user project macro run the following
+```
+# Run openlane to harden user_proj_example
+make user_proj_example
+# Run openlane to harden user_project_wrapper
+make user_project_wrapper
+```
 List of Contributors
 =================================
 
